@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute(@"UniversalSecretsManagerConnector is a .NET 8 library designed to provide a unified interface for reading and writing secrets across multiple secret management providers. It supports AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, environment variables, and file-based secret storage.")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.1")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.1+ea941fc2902e5033df222a3db02cccc191ebe552")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.1+15588694e951b780907526340c87b145b707a208")]
 [assembly: System.Reflection.AssemblyProductAttribute("UniversalSecretsManagerConnector")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UniversalSecretsManagerConnector")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.1.0")]

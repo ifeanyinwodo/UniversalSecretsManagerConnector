@@ -76,6 +76,11 @@ public class ManagerConnector
             return UniversalSecretsManagerConnector.SecretsManagerConnector.Environment.SecretReader.GetSecret(variableName);
         }
 
+        public static void SetSecretInEnvironmentVariable(string variableName, string variableValue)
+        {
+            UniversalSecretsManagerConnector.SecretsManagerConnector.Environment.SecretWriter.SetSecret(variableName, variableValue);
+        }
+
 
 
     }

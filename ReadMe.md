@@ -103,7 +103,7 @@ Top-level files
 - `UniversalSecretsManagerConnector.csproj` — library project file.
 - `ManagerConnector.cs` — static convenience wrapper around provider readers/writers (examples above).
 - `ReadMe.md` — this file.
-- `LICENSE` — MIT license.
+- `LICENSE` — Apache-2.0.
 
 Folders and purpose
 
@@ -129,15 +129,26 @@ To add support for another provider, follow the established pattern:
 3. Use `Helper/Utility.cs` for any shared parsing/normalization.
 4. Update `ManagerConnector.cs` if you want convenience wrapper methods for the new provider.
 
-## Tests
-
-This repository does not include automated tests. Adding unit tests for each provider adapter (mocking external APIs) is recommended.
-
 ## License
 
-MIT
+This project is licensed under the [Apache-2.0 License](LICENSE).
+
+---
+
+## Author
+
+**Ifeanyi Nwodo**
+
+---
 
 ## Contributing
 
-Contributions and issues are welcome. Please open PRs or issues against the repository on GitHub.
+Contributions, issues, and feature requests are welcome! Please open an issue or submit a pull request.
 
+---
+
+## Disclaimer
+
+This library is provided as-is. Always review and test cryptographic code for your specific use case and security requirements.
+
+---

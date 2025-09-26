@@ -1,65 +1,143 @@
 # UniversalSecretsManagerConnector
 
-UniversalSecretsManagerConnector is a .NET 8 library designed to provide a unified interface for reading and writing secrets across multiple secret management providers. It supports AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, environment variables, and file-based secret storage.
+UniversalSecretsManagerConnector is a .NET 8 library that provides a unified interface for reading and writing secrets from multiple secret management systems: AWS Secrets Manager, Azure Key Vault, HashiCorp Vault, environment variables, and file-based storage.
 
-## Features
+## Overview
 
-- **Unified API** for secret management across multiple providers.
-- **Read and write** secrets from:
-  - AWS Secrets Manager
-  - Azure Key Vault
-  - HashiCorp Vault
-  - Environment variables
-  - File-based storage
-- **Extensible architecture** for adding new secret providers.
-- **Helper utilities** for common secret management tasks.
+- Unified, minimal API surface for common secret operations (read/write).
+- Provider-specific implementations are placed under `SecretsManagerConnector.*` namespaces.
+- Small helper utilities are provided in `Helper/Utility.cs` to normalize inputs and parse provider responses.
 
-## Supported Providers
+## Requirements
 
-- **AWS**: `SecretsManagerConnector.AWS`
-- **Azure**: `SecretsManagerConnector.Azure`
-- **HashiCorp Vault**: `SecretsManagerConnector.HashiCorp`
-- **Environment Variables**: `SecretsManagerConnector.Environment`
-- **File Path**: `SecretsManagerConnector.FilePath`
+- .NET 8 SDK
+- Provider-specific credentials and configuration (see provider sections below).
+- Important: If you plan to use the HashiCorp Vault implementation included in this repository, the Vault KV secrets engine MUST be mounted as kv-v2 under the mount path `secret` (this is the path hard-coded by the library). The code expects to call endpoints like `/v1/secret/data/allapps/{secretName}`.
 
-## Getting Started
+  Example (Vault CLI):
 
-### Prerequisites
+  ```bash
+  # enable kv-v2 at path "secret" (run on the Vault server or where VAULT_ADDR/VAULT_TOKEN are configured)
+  vault secrets enable -path=secret kv-v2
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+  # write a secret that will be visible to this library at secret/allapps/mysecret
+  vault kv put secret/allapps/mysecret value="my-value"
+  ```
 
-### Installation
+  Note: If you mount kv-v2 at a different path, you'll need to change the library's hard-coded path (see `SecretsManagerConnector.HashiCorp.SecretReader`) or adapt your Vault configuration.
 
-Add the project reference to your solution or include the source code in your project.
+## Quick start
 
-### Usage Example
+1. Ensure you have the .NET 8 SDK installed.
+2. Add this project to your solution or reference its NuGet package .
+3. Use the `ManagerConnector` static helper to call provider-specific methods.
 
+### Build
 
-### Provider-Specific Usage
+From the repository root:
 
-Each provider has its own reader and writer classes. For example:
+```powershell
+dotnet build
+```
 
+### Simple usage example
 
-## Project Structure
+Create a small console app and add a project reference to this connector project, or reference the package.
 
-- `SecretsManagerConnector.cs`: Main connector class.
-- `SecretsManagerConnector.Models/Models.cs`: Data models for secrets.
-- `SecretsManagerConnector.AWS/SecretReader.cs`, `SecretWriter.cs`: AWS integration.
-- `SecretsManagerConnector.Azure/SecretReader.cs`, `SecretWriter.cs`: Azure integration.
-- `SecretsManagerConnector.HashiCorp/SecretReader.cs`, `SecretWriter.cs`: HashiCorp Vault integration.
-- `SecretsManagerConnector.Environment/SecretReader.cs`: Environment variable integration.
-- `SecretsManagerConnector.FilePath/SecretReader.cs`, `SecretWriter.cs`: File-based secret management.
-- `Helper/Utility.cs`: Utility functions.
+Example C# usage (Console App - async Main):
 
-## Extending
+```csharp
+using System;
+using System.Threading.Tasks;
 
-To add a new provider, implement `SecretReader` and `SecretWriter` classes following the existing pattern and register them with the main connector.
+class Program
+{
+    static async Task Main(string[] args)
+    {
+        // HashiCorp Vault example
+        string vaultAddr = "https://127.0.0.1:8200";
+        string vaultToken = "s.xxxxxxxxxxxxxxxxx";
+        string secretName = "mysecret";
+
+        // Read
+        string secretValue = await UniversalSecretsManagerConnector.ManagerConnector.GetSecretFromHashiCorp(vaultAddr, vaultToken, secretName);
+        Console.WriteLine($"Secret: {secretValue}");
+
+        // Write
+        await UniversalSecretsManagerConnector.ManagerConnector.SetSecretInHashiCorp(vaultAddr, vaultToken, secretName, "new-value");
+    }
+}
+```
+
+Example for AWS Secrets Manager:
+
+```csharp
+string secret = await UniversalSecretsManagerConnector.ManagerConnector.GetSecretFromAWS("my-aws-secret-name");
+await UniversalSecretsManagerConnector.ManagerConnector.SetSecretInAWS("my-aws-secret-name", "my-new-value");
+```
+
+Example for Azure Key Vault (managed identity):
+
+```csharp
+await UniversalSecretsManagerConnector.ManagerConnector.SetSecretInAzureUsingManagedIdentity("https://myvault.vault.azure.net/", "secret-name", "value");
+string val = await UniversalSecretsManagerConnector.ManagerConnector.GetSecretFromAzureUsingManagedIdentity("https://myvault.vault.azure.net/", "secret-name");
+```
+
+Example for environment variables and file-based secrets (synchronous helpers):
+
+```csharp
+// Environment
+var env = UniversalSecretsManagerConnector.ManagerConnector.GetSecretFromEnvironmentVariable("MY_ENV_VAR");
+UniversalSecretsManagerConnector.ManagerConnector.SetSecretInEnvironmentVariable("MY_ENV_VAR", "value");
+
+// File
+var fileSecret = UniversalSecretsManagerConnector.ManagerConnector.GetSecretFromFile("C:\\path\\to\\secret.txt");
+UniversalSecretsManagerConnector.ManagerConnector.SetSecretInFile("C:\\path\\to\\secret.txt", "value");
+```
+
+## Project / Solution structure
+
+Top-level files
+
+- `UniversalSecretsManagerConnector.sln` — Visual Studio solution file.
+- `UniversalSecretsManagerConnector.csproj` — library project file.
+- `ManagerConnector.cs` — static convenience wrapper around provider readers/writers (examples above).
+- `ReadMe.md` — this file.
+- `LICENSE` — MIT license.
+
+Folders and purpose
+
+- `SecretsManagerConnector.AWS/` — AWS Secrets Manager reader/writer implementations.
+- `SecretsManagerConnector.Azure/` — Azure Key Vault reader/writer implementations.
+- `SecretsManagerConnector.HashiCorp/` — HashiCorp Vault reader/writer (expects kv-v2 mounted at `secret`).
+- `SecretsManagerConnector.Environment/` — read/write helpers for environment variables.
+- `SecretsManagerConnector.FilePath/` — read/write helpers for file-based secrets.
+- `Helper/` — shared utilities (e.g. input normalization and response parsing).
+- `bin/`, `obj/` — build artifacts and packaged output (including a sample nupkg in `bin/Debug`).
+
+## Notes on HashiCorp Vault behavior
+
+- The HashiCorp reader currently builds the secret path using `secret/data/allapps/{secretName}` and then parses the returned JSON to extract name/value pairs (see `Helper/Utility.cs` for the parsing logic).
+- Because the path is hard-coded to the `secret` mount and `allapps` prefix, either ensure your Vault secrets follow that path or modify the code to suit your naming/mount layout.
+
+## Extending the library
+
+To add support for another provider, follow the established pattern:
+
+1. Add a new folder `SecretsManagerConnector.YourProvider`.
+2. Implement `SecretReader` and `SecretWriter` classes with async methods that mirror the existing provider signatures.
+3. Use `Helper/Utility.cs` for any shared parsing/normalization.
+4. Update `ManagerConnector.cs` if you want convenience wrapper methods for the new provider.
+
+## Tests
+
+This repository does not include automated tests. Adding unit tests for each provider adapter (mocking external APIs) is recommended.
 
 ## License
 
-This project is licensed under the MIT License.
+MIT
 
 ## Contributing
 
-Contributions are welcome! Please submit issues or pull requests via GitHub.
+Contributions and issues are welcome. Please open PRs or issues against the repository on GitHub.
 
